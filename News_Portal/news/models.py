@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import Sum
+from django.urls import reverse
 
 
 # Создавайте свои модели здесь.
@@ -28,9 +29,17 @@ class Author(models.Model):
         self.ratingAut = temp_sum_p * 3 + temp_sum_c
         self.save()
 
+    # для удобного отображения на странице администратора
+    def __str__(self):
+        return self.autUser.username
+
 
 class Category(models.Model):
     name = models.CharField(max_length=128, unique=True)
+
+    # для отображения имён вместо объектов
+    def __str__(self):
+        return self.name
 
 
 class Post(models.Model):
@@ -63,6 +72,15 @@ class Post(models.Model):
     def preview(self):
         return f'{self.content[:123]} ...'
 
+    # для удобного отображения на странице администратора
+    def __str__(self):
+        return self.title
+
+    # какую страницу нужно открыть после создания
+    @staticmethod
+    def get_absolute_url():
+        return reverse('Start')
+
 
 class PostCategory(models.Model):
     postThrough = models.ForeignKey(Post, on_delete=models.CASCADE)
@@ -86,3 +104,7 @@ class Comment(models.Model):
     def dislike(self):
         self.rating -= 1
         self.save()
+
+    # для удобного отображения на странице администратора
+    def __str__(self):
+        return self.text

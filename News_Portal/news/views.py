@@ -1,7 +1,10 @@
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404
-from django.views.generic import ListView, DetailView
-from .models import Post
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+
+from .filters import PostFilter
+from .forms import NewsForm, ArticleForm
+from .models import Post, Category
 
 """
 get_object_or_404 - используется для получения объекта из базы данных по заданным условиям. 
@@ -9,11 +12,13 @@ get_object_or_404 - используется для получения объе�
 """
 
 
+# ====== Стартовая страница ============================================================================================
 def Start_Padge(request):
-    news = Post.objects.filter(type='NW').order_by('-creationDate')[:4]
-    return render(request, 'news/Start.html', {'news': news})
+    posts = Post.objects.filter(type='NW').order_by('-creationDate')[:4]
+    return render(request, 'flatpages/Start.html', {'posts': posts})
 
 
+# ====== Новости =======================================================================================================
 class NewsList(ListView):
     paginate_by = 10
     model = Post
@@ -31,6 +36,34 @@ class NewsDetail(DetailView):
     context_object_name = 'post'
 
 
+class NewsCreate(CreateView):
+    model = Post
+    form_class = NewsForm
+    template_name = 'news_create.html'
+    success_url = '/'
+
+    def form_valid(self, form):
+        post = form.save(commit=False)
+        post.type = 'NW'
+        post.author = self.request.user.author
+        post.save()
+        return super().form_valid(form)
+
+
+class NewsEdit(UpdateView):
+    model = Post
+    form_class = NewsForm
+    template_name = 'news_edit.html'
+    success_url = '/'
+
+
+class NewsDelete(DeleteView):
+    model = Post
+    template_name = 'news_delete.html'
+    success_url = '/'
+
+
+# ====== Статьи ========================================================================================================
 def article_list(request):
     article = Post.objects.filter(type='AR').order_by('-creationDate')  # Фильтруем только статьи
     # и сортируем по убыванию даты
@@ -43,3 +76,50 @@ def article_list(request):
 def article_detail(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
     return render(request, 'news/article_detail.html', {'post': post})
+
+
+class ArticleCreate(CreateView):
+    model = Post
+    form_class = ArticleForm
+    template_name = 'article_create.html'
+    success_url = '/'
+
+    def form_valid(self, form):
+        post = form.save(commit=False)
+        post.type = 'AR'
+        post.author = self.request.user.author
+        post.save()
+        return super().form_valid(form)
+
+
+class ArticleEdit(UpdateView):
+    model = Post
+    form_class = ArticleForm
+    template_name = 'article_edit.html'
+    success_url = '/'
+
+
+class ArticleDelete(DeleteView):
+    model = Post
+    template_name = 'article_delete.html'
+    success_url = '/'
+
+
+# ====== Поиск =========================================================================================================
+class Search(ListView):
+    model = Post
+    template_name = 'flatpages/search.html'
+    context_object_name = 'search'
+    filterset_class = PostFilter
+    paginate_by = 7
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        self.filterset = self.filterset_class(self.request.GET, queryset=queryset)
+        return self.filterset.qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['filter'] = self.filterset
+        context['categories'] = Category.objects.all()  # Получение всех категорий
+        return context
