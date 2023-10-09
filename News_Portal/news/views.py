@@ -1,5 +1,6 @@
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 
 from .filters import PostFilter
@@ -14,8 +15,8 @@ get_object_or_404 - используется для получения объе�
 
 # ====== Стартовая страница ============================================================================================
 def Start_Padge(request):
-    posts = Post.objects.filter(type='NW').order_by('-creationDate')[:4]
-    return render(request, 'flatpages/Start.html', {'posts': posts})
+    news = Post.objects.filter(type='NW').order_by('-creationDate')[:4]
+    return render(request, 'flatpages/Start.html', {'news': news})
 
 
 # ====== Новости =======================================================================================================
@@ -36,7 +37,8 @@ class NewsDetail(DetailView):
     context_object_name = 'post'
 
 
-class NewsCreate(CreateView):
+class NewsCreate(LoginRequiredMixin, CreateView):
+    raise_exception = True
     model = Post
     form_class = NewsForm
     template_name = 'news_create.html'
@@ -50,14 +52,16 @@ class NewsCreate(CreateView):
         return super().form_valid(form)
 
 
-class NewsEdit(UpdateView):
+class NewsEdit(LoginRequiredMixin, UpdateView):
+    raise_exception = True
     model = Post
     form_class = NewsForm
     template_name = 'news_edit.html'
     success_url = '/'
 
 
-class NewsDelete(DeleteView):
+class NewsDelete(LoginRequiredMixin, DeleteView):
+    raise_exception = True
     model = Post
     template_name = 'news_delete.html'
     success_url = '/'
@@ -78,7 +82,8 @@ def article_detail(request, post_id):
     return render(request, 'news/article_detail.html', {'post': post})
 
 
-class ArticleCreate(CreateView):
+class ArticleCreate(LoginRequiredMixin, CreateView):
+    raise_exception = True
     model = Post
     form_class = ArticleForm
     template_name = 'article_create.html'
@@ -92,14 +97,16 @@ class ArticleCreate(CreateView):
         return super().form_valid(form)
 
 
-class ArticleEdit(UpdateView):
+class ArticleEdit(LoginRequiredMixin, UpdateView):
+    raise_exception = True
     model = Post
     form_class = ArticleForm
     template_name = 'article_edit.html'
     success_url = '/'
 
 
-class ArticleDelete(DeleteView):
+class ArticleDelete(LoginRequiredMixin, DeleteView):
+    raise_exception = True
     model = Post
     template_name = 'article_delete.html'
     success_url = '/'
