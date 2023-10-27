@@ -1,7 +1,12 @@
 from django.contrib.auth.models import User
+from django.core.mail import send_mail
 from django.db import models
 from django.db.models import Sum
+from django.db.models.signals import m2m_changed
+from django.dispatch import receiver
 from django.urls import reverse
+
+from subscriptions.models import Subscriber
 
 
 # Создавайте свои модели здесь.
@@ -108,3 +113,31 @@ class Comment(models.Model):
     # для удобного отображения на странице администратора
     def __str__(self):
         return self.text
+
+
+# отправка писем при публикации новой статьи
+@receiver(m2m_changed, sender=Post.postCategory.through)
+def notify_subscribers(sender, instance, action, **kwargs):
+    if action == "post_add":  # отправка уведомления только при добавлении категорий.
+        # print(f"notify_subscribers вызвали публикацию id={instance.id}")
+        if instance.id:
+            print("Сообщение создано, отправка писем")
+            categories = instance.postCategory.all()
+            if categories:
+                for category in categories:
+                    subscribers = Subscriber.objects.filter(category=category)
+                    for subscriber in subscribers:
+                        if subscriber.user.email:
+                            print(f"Отправка электронной почты на {subscriber.user.email}")
+                            send_mail(
+                                'Новый пост в категории, на которую вы подписаны',
+                                f'Посмотреть можно здесь: http://127.0.0.1:8000/news/{instance.id}',
+                                'AndreyTestSF@yandex.ru',
+                                [subscriber.user.email],
+                                )
+                        else:
+                            print(f"Нет электронной почты для пользователя {subscriber.user.username}")
+            else:
+                print("Нет категорий для этого сообщения")
+        else:
+            print("Пост не создан, письма не отправляются")

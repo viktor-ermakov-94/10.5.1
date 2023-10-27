@@ -11,12 +11,14 @@ from .models import Post, Category
 get_object_or_404 - используется для получения объекта из базы данных по заданным условиям. 
 Если объект не найден, то функция вызывает исключение `Http404`, и возвращает страницу с ошибкой 404.
 """
+# Создайте свои представления здесь
 
 
 # ====== Стартовая страница ============================================================================================
 def Start_Padge(request):
     news = Post.objects.filter(type='NW').order_by('-creationDate')[:4]
     return render(request, 'flatpages/Start.html', {'news': news})
+
 
 # ====== Новости =======================================================================================================
 class NewsList(ListView):
@@ -45,10 +47,11 @@ class NewsCreate(PermissionRequiredMixin, LoginRequiredMixin, CreateView):
     success_url = '/'
 
     def form_valid(self, form):
-        post = form.save(commit=False)
-        post.type = 'NW'
-        post.author = self.request.user.author
-        post.save()
+        form.instance.type = 'NW'
+        form.instance.author = self.request.user.author
+        self.object = form.save()  # Сохранить публикацию, чтобы у нее был идентификатор.
+        form.save(commit=False)
+        form.save_m2m()  # Сохранение данных «многие ко многим»
         return super().form_valid(form)
 
 
@@ -59,6 +62,14 @@ class NewsEdit(PermissionRequiredMixin, LoginRequiredMixin, UpdateView):
     form_class = NewsForm
     template_name = 'news_edit.html'
     success_url = '/'
+
+    def form_valid(self, form):
+        form.instance.type = 'NW'
+        form.instance.author = self.request.user.author
+        self.object = form.save()  # Сохранить публикацию, чтобы у нее был идентификатор.
+        form.save(commit=False)
+        form.save_m2m()  # Сохранение данных «многие ко многим»
+        return super().form_valid(form)
 
 
 class NewsDelete(PermissionRequiredMixin, LoginRequiredMixin, DeleteView):
@@ -93,10 +104,10 @@ class ArticleCreate(PermissionRequiredMixin, LoginRequiredMixin, CreateView):
     success_url = '/'
 
     def form_valid(self, form):
-        post = form.save(commit=False)
-        post.type = 'AR'
-        post.author = self.request.user.author
-        post.save()
+        form.instance.type = 'AR'
+        form.instance.author = self.request.user.author
+        form.instance.save()  # Сохранить публикацию, чтобы у нее был идентификатор.
+        form.save_m2m()  # Сохранение данных «многие ко многим»
         return super().form_valid(form)
 
 
@@ -106,6 +117,13 @@ class ArticleEdit(PermissionRequiredMixin, LoginRequiredMixin, UpdateView):
     form_class = ArticleForm
     template_name = 'article_edit.html'
     success_url = '/'
+
+    def form_valid(self, form):
+        form.instance.type = 'AR'
+        form.instance.author = self.request.user.author
+        form.instance.save()  # Сохранить публикацию, чтобы у нее был идентификатор.
+        form.save_m2m()  # Сохранение данных «многие ко многим»
+        return super().form_valid(form)
 
 
 class ArticleDelete(PermissionRequiredMixin, LoginRequiredMixin, DeleteView):

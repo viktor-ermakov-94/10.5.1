@@ -1,3 +1,8 @@
 from django.db import models
+from django.contrib.auth.models import User
 
-# Create your models here.
+
+# Создавайте свои модели здесь.
+class Subscriber(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    category = models.ForeignKey('news.Category', on_delete=models.CASCADE)
